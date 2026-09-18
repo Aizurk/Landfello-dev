@@ -1,0 +1,19 @@
+{
+  "name": "Landfello - Land & Real Estate in Africa",
+  "short_name": "Landfello",
+  "description": "Land & Real Estate in Africa",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "500x500",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#065f46",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/"
+}
+
+

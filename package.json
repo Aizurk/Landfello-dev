@@ -1,0 +1,33 @@
+{
+  "name": "landfello",
+  "version": "1.0.0",
+  "description": "A Node.js and TypeScript website project",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "tsc",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "start": "node dist/index.js",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev:frontend": "cd frontend && npm run dev",
+    "watch": "tsc --watch",
+    "install:all": "npm install && cd frontend && npm install"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "firebase-admin": "^13.6.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.5",
+    "concurrently": "^8.2.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  }
+}
