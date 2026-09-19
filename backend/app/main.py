@@ -7,17 +7,12 @@ from sqlalchemy.orm import Session
 
 from .auth import create_access_token, get_current_user, hash_password, verify_password
 from .config import get_settings
-from .database import Property, Purchase, User, get_db, init_db, utcnow
-from .paystack import initialize_payment, verify_payment
+from .database import Property, User, get_db, init_db, utcnow
 from .schemas import (
     AuthResponse,
     LoginRequest,
-    PaymentInitRequest,
-    PaymentInitResponse,
-    PaymentVerifyResponse,
     PropertyIn,
     PropertyOut,
-    PurchaseOut,
     SignupRequest,
     UserOut,
     property_to_out,
@@ -51,8 +46,6 @@ def on_startup() -> None:
 def health():
     return {
         "status": "healthy",
-        "paystack": "enabled" if settings.paystack_enabled else "mock",
-        "currency": settings.currency,
     }
 
 
@@ -144,8 +137,6 @@ def create_property(
 ):
     if user.account_type != "agent":
         raise HTTPException(status_code=403, detail="Only agents can list land for sale")
-    if payload.listingType == "sale" and (payload.price is None or payload.price <= 0):
-        raise HTTPException(status_code=400, detail="Sale listings require a valid price")
 
     prop = Property(
         property_id=str(uuid.uuid4()),
@@ -248,79 +239,3 @@ def delete_property(
     db.delete(prop)
     db.commit()
     return None
-
-
-@app.post("/api/payments/initialize", response_model=PaymentInitResponse)
-async def payments_initialize(
-    payload: PaymentInitRequest,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    prop = db.query(Property).filter(Property.property_id == payload.propertyId).first()
-    if not prop:
-        raise HTTPException(status_code=404, detail="Property not found")
-    try:
-        purchase = await initialize_payment(db, user, prop)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    return PaymentInitResponse(
-        reference=purchase.reference,
-        authorizationUrl=purchase.authorization_url or "",
-        accessCode=purchase.paystack_access_code,
-        publicKey=settings.paystack_public_key or None,
-        amountLocal=purchase.amount_local,
-        currency=purchase.currency,
-        email=user.email,
-        mock=not settings.paystack_enabled,
-    )
-
-
-@app.get("/api/payments/verify/{reference}", response_model=PaymentVerifyResponse)
-async def payments_verify(
-    reference: str,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    try:
-        purchase = await verify_payment(db, reference, user)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    return PaymentVerifyResponse(
-        status=purchase.status,
-        reference=purchase.reference,
-        propertyId=purchase.property_id,
-        amountUsd=purchase.amount_usd,
-        message="Payment successful. Land purchase completed."
-        if purchase.status == "success"
-        else "Payment pending or failed",
-    )
-
-
-@app.get("/api/purchases/me", response_model=list[PurchaseOut])
-def my_purchases(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    rows = (
-        db.query(Purchase)
-        .filter(Purchase.buyer_id == user.id, Purchase.status == "success")
-        .order_by(Purchase.paid_at.desc())
-        .all()
-    )
-    out = []
-    for p in rows:
-        prop = db.query(Property).filter(Property.property_id == p.property_id).first()
-        out.append(
-            PurchaseOut(
-                id=p.id,
-                propertyId=p.property_id,
-                propertyTitle=prop.title if prop else "Unknown land",
-                amountUsd=p.amount_usd,
-                amountLocal=p.amount_local,
-                currency=p.currency,
-                reference=p.reference,
-                status=p.status,
-                paidAt=p.paid_at,
-                createdAt=p.created_at,
-            )
-        )
-    return out

@@ -104,30 +104,12 @@ def test_buyer_cannot_create_listing(client):
     assert resp.status_code == 403
 
 
-def test_buy_land_mock_paystack_flow(client):
-    headers = auth_headers(client, SEED_BUYER_EMAIL)
+def test_property_detail_is_public(client):
     listings = client.get("/api/properties").json()
     property_id = listings[0]["propertyID"]
-
-    init = client.post("/api/payments/initialize", json={"propertyId": property_id}, headers=headers)
-    assert init.status_code == 200, init.text
-    init_body = init.json()
-    assert init_body["mock"] is True
-    assert init_body["reference"]
-    assert "checkout/mock" in init_body["authorizationUrl"]
-
-    verify = client.get(f"/api/payments/verify/{init_body['reference']}", headers=headers)
-    assert verify.status_code == 200, verify.text
-    assert verify.json()["status"] == "success"
-
-    prop = client.get(f"/api/properties/{property_id}").json()
-    assert prop["status"] == "sold"
-
-    available = client.get("/api/properties").json()
-    assert all(p["propertyID"] != property_id for p in available)
-
-    purchases = client.get("/api/purchases/me", headers=headers).json()
-    assert any(p["propertyId"] == property_id for p in purchases)
+    resp = client.get(f"/api/properties/{property_id}")
+    assert resp.status_code == 200
+    assert resp.json()["propertyID"] == property_id
 
 
 def test_signup_agent_and_investor(client):

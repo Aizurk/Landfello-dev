@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, LogOut, Settings, CreditCard, Plus } from "lucide-react";
+import { Bell, LogOut, Settings, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { BrandLogo } from "@/components/BrandLogo";
 
@@ -123,10 +123,6 @@ export function TopNav({ userName }: { userName?: string }) {
                   <DropdownMenuItem onClick={() => navigate("/settings")}>
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Billing
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-red-600" onClick={handleLogout}>

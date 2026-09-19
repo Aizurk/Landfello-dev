@@ -22,8 +22,6 @@ import OfferReceived from './pages/ownerListing/OfferReceived';
 import ClosingWorkspace from './pages/ownerListing/ClosingWorkspace';
 import EscrowFlow from './pages/ownerListing/EscrowFlow';
 import SaleCompleted from './pages/ownerListing/SaleCompleted';
-import CheckoutMock from './pages/CheckoutMock';
-import CheckoutSuccess from './pages/CheckoutSuccess';
 import { Component, ErrorInfo, ReactNode } from 'react';
 
 class ErrorBoundary extends Component<
@@ -73,8 +71,6 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/buy" element={<BuyLand />} />
             <Route path="/buy-land" element={<BuyLand />} />
-            <Route path="/checkout/mock" element={<CheckoutMock />} />
-            <Route path="/checkout/success" element={<CheckoutSuccess />} />
             <Route path="/add-property" element={<AddProperty />} />
             <Route path="/my-properties" element={<MyProperties />} />
             <Route path="/edit-property/:propertyId" element={<EditProperty />} />

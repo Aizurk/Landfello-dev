@@ -2,7 +2,7 @@
 
 Marketplace for buying and selling land in Africa.
 
-- **Buyers** browse verified land listings and purchase via Paystack (test/mock supported)
+- **Buyers** browse verified land listings and call Landfello to buy
 - **Agents** register, upload land photos + details, and list parcels for sale
 - **Frontend:** React + Vite
 - **Backend:** Python FastAPI + SQLite
@@ -32,21 +32,16 @@ npm run dev
 
 ### Demo accounts (seeded)
 
-| Role   | Email                 | Password     |
-|--------|-----------------------|--------------|
+| Role   | Email                    | Password     |
+|--------|--------------------------|--------------|
 | Agent  | agent@landfello.example  | password123  |
 | Buyer  | buyer@landfello.example  | password123  |
 
-### Paystack
+### Buying land
 
-By default the API uses a **mock Paystack checkout** so purchases work locally without keys.
+Buyers tap **Buy land** on a listing and dial the Landfello inquiry number shown on screen:
 
-To use real Paystack **test** keys, edit `backend/.env`:
-
-```
-PAYSTACK_SECRET_KEY=sk_test_...
-PAYSTACK_PUBLIC_KEY=pk_test_...
-```
+**+1240717560**
 
 ### Tests
 
@@ -86,5 +81,5 @@ Then open http://localhost:8000/health
 
 ## Core flows
 
-1. **Agent:** Sign up as agent → Add Property → upload images + land details → listing appears on Buy page
-2. **Buyer:** Sign up as investor → Browse `/buy` → Open listing → Buy land → Paystack test checkout → land marked sold
+1. **Agent:** Sign up as agent → Add Property → upload images + land details → listing appears for buyers
+2. **Buyer:** Sign up as investor → Browse `/buy` → Open listing → Buy land → call **+1240717560**

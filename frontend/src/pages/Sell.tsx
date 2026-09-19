@@ -105,7 +105,7 @@ export default function SellPage() {
             <div className="rounded-2xl border border-emerald-950/10 bg-white p-4">
               <div className="text-sm font-semibold text-emerald-950">Set a clear price</div>
               <div className="mt-1 text-sm text-emerald-950/70">
-                Buyers can purchase listed land through secure checkout once it is published.
+                Buyers can call Landfello to inquire about listed land once it is published.
               </div>
             </div>
             <div className="rounded-2xl border border-emerald-950/10 bg-white p-4">

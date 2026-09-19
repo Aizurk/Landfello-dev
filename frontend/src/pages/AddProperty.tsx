@@ -216,21 +216,11 @@ export default function AddProperty() {
       return;
     }
 
-    if (listingType === "sale" && !formData.price) {
-      setError("Price is required for sale listings");
-      return;
-    }
-
-    if (listingType === "rent" && !formData.monthlyRent) {
-      setError("Monthly rent is required for rental listings");
-      return;
-    }
-
     try {
       setLoading(true);
 
       const propertyData: Property = {
-        userId: currentUser.uid, // Saved to Supabase as user_id
+        userId: currentUser.uid,
         listingType,
         title: formData.title,
         description: formData.description,
@@ -241,8 +231,6 @@ export default function AddProperty() {
         areaAcres: parseFloat(formData.areaAcres) || 0,
         tenure: listingType === "sale" ? (formData.tenure as "Freehold" | "Leasehold") : undefined,
         leaseTerm: listingType === "rent" ? (formData.leaseTerm as "Short-term" | "Long-term" | "Flexible") : undefined,
-        price: listingType === "sale" ? parseFloat(formData.price) : undefined,
-        monthlyRent: listingType === "rent" ? parseFloat(formData.monthlyRent) : undefined,
         tags: formData.tags,
         images: formData.images,
         contactName: formData.contactName,
@@ -463,38 +451,6 @@ export default function AddProperty() {
                 </Field>
               )}
             </div>
-          </Card>
-
-          {/* Pricing */}
-          <Card className="rounded-[28px] bg-white/80 ring-1 ring-black/5 shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-emerald-950 mb-4">Pricing</h2>
-            {listingType === "sale" ? (
-              <Field label="Price (USD)" icon={<DollarSign className="h-4 w-4" />} required>
-                <Input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  placeholder="50000"
-                  min="0"
-                  className="w-full rounded-2xl pl-9"
-                  required
-                />
-              </Field>
-            ) : (
-              <Field label="Monthly Rent (USD)" icon={<DollarSign className="h-4 w-4" />} required>
-                <Input
-                  type="number"
-                  name="monthlyRent"
-                  value={formData.monthlyRent}
-                  onChange={handleChange}
-                  placeholder="500"
-                  min="0"
-                  className="w-full rounded-2xl pl-9"
-                  required
-                />
-              </Field>
-            )}
           </Card>
 
           {/* Images Gallery */}

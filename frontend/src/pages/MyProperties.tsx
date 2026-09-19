@@ -9,12 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Edit, Trash2, Plus } from "lucide-react";
 import { useRoleGate } from "@/hooks/useRoleGate";
 
-function formatUSD(n: number) {
-  return n.toLocaleString(undefined, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  });
+function formatStatus(property: Property) {
+  return property.status === "sold" ? "Sold" : "Available";
 }
 
 export default function MyProperties() {
@@ -149,15 +145,11 @@ export default function MyProperties() {
                   {/* Content */}
                   <div className="p-4">
                     <div className="text-xl font-semibold text-gray-900 mb-2">
-                      {property.listingType === "sale" ? (
-                        property.price ? formatUSD(property.price) : "Price TBD"
-                      ) : (
-                        property.monthlyRent ? `${formatUSD(property.monthlyRent)}/mo` : "Rent TBD"
-                      )}
+                      {property.title}
                     </div>
 
-                    <div className="text-sm text-gray-700 mb-1 line-clamp-2">
-                      {property.title}
+                    <div className="text-sm text-emerald-800 mb-1">
+                      {formatStatus(property)}
                     </div>
 
                     <div className="text-xs text-gray-600 mb-3 flex items-center gap-1">

@@ -50,15 +50,6 @@ type Listing = {
   sellerType?: "Agent" | "Owner";
 };
 
-function formatUSD(n: number) {
-  return n.toLocaleString(undefined, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  });
-}
-
-// Helper function to convert Property from Cosmos DB to Listing for UI
 function propertyToListing(property: Property): Listing {
   return {
     id: property.propertyID || "",
@@ -247,9 +238,9 @@ function ListingTile({
 
         {/* Content Section */}
         <div className="p-3">
-          {/* Price */}
-          <div className="text-xl font-semibold text-gray-900 mb-1.5">
-            {formatUSD(l.priceUSD)}
+          {/* Title */}
+          <div className="text-lg font-semibold text-gray-900 mb-1.5 line-clamp-2">
+            {l.title}
           </div>
 
           {/* Specifications */}
@@ -323,8 +314,6 @@ export default function LandfelloBuyPage() {
 
   // Filters (Zillow-like)
   const [status, setStatus] = useState<"for_sale" | "coming_soon">("for_sale");
-  const [priceMin, setPriceMin] = useState<string>("");
-  const [priceMax, setPriceMax] = useState<string>("");
   const [beds, setBeds] = useState<"any" | "1+" | "2+" | "3+" | "4+" | "5+">("any");
   const [baths, setBaths] = useState<"any" | "1+" | "1.5+" | "2+" | "3+" | "4+">("any");
   const [homeTypes, setHomeTypes] = useState<Record<string, boolean>>(() => ({
@@ -380,14 +369,7 @@ export default function LandfelloBuyPage() {
         const activeTypes = Object.entries(homeTypes).filter(([, v]) => v).map(([k]) => k);
         if (activeTypes.length > 0 && activeTypes.length < 4) {
           // If not all types selected, we'll filter client-side
-          // Cosmos DB query doesn't support OR easily, so we fetch all and filter
         }
-        
-        // Add price filters
-        const min = priceMin ? Number(priceMin.replace(/[^0-9]/g, "")) : undefined;
-        const max = priceMax ? Number(priceMax.replace(/[^0-9]/g, "")) : undefined;
-        if (min !== undefined) apiFilters.minPrice = min;
-        if (max !== undefined) apiFilters.maxPrice = max;
         
         const fetchedProperties = await getAllProperties(apiFilters);
         setProperties(fetchedProperties);
@@ -401,7 +383,7 @@ export default function LandfelloBuyPage() {
     }
     
     fetchProperties();
-  }, [countryFilter, priceMin, priceMax]); // Re-fetch when these filters change
+  }, [countryFilter]); // Re-fetch when country filter changes
 
   const activeHomeTypes = useMemo(
     () => Object.entries(homeTypes).filter(([, v]) => v).map(([k]) => k),
@@ -414,8 +396,6 @@ export default function LandfelloBuyPage() {
     const listings = properties.map(propertyToListing);
     
     const q = query.trim().toLowerCase();
-    const min = priceMin ? Number(priceMin.replace(/[^0-9]/g, "")) : null;
-    const max = priceMax ? Number(priceMax.replace(/[^0-9]/g, "")) : null;
 
     return listings.filter((l) => {
       // Filter by country if countryFilter is set (already filtered by API, but double-check)
@@ -425,10 +405,6 @@ export default function LandfelloBuyPage() {
       const hay = `${l.title} ${l.city} ${l.country} ${l.neighborhood ?? ""} ${l.landType} ${l.tenure}`
         .toLowerCase();
       if (q && !hay.includes(q)) return false;
-
-      // Price filters (already filtered by API, but double-check)
-      if (min !== null && l.priceUSD < min) return false;
-      if (max !== null && l.priceUSD > max) return false;
 
       // Property type filter
       if (!activeHomeTypes.includes(l.landType)) return false;
@@ -444,12 +420,11 @@ export default function LandfelloBuyPage() {
 
       return true;
     });
-  }, [properties, query, countryFilter, priceMin, priceMax, activeHomeTypes, onlyVerified, freeholdOnly, status]);
+  }, [properties, query, countryFilter, activeHomeTypes, onlyVerified, freeholdOnly, status]);
 
   const filterCount = useMemo(() => {
     let c = 0;
     if (countryFilter) c += 1;
-    if (priceMin || priceMax) c += 1;
     if (beds !== "any" || baths !== "any") c += 1;
     const allTypesOn = Object.values(homeTypes).every(Boolean);
     if (!allTypesOn) c += 1;
@@ -457,7 +432,7 @@ export default function LandfelloBuyPage() {
     if (freeholdOnly) c += 1;
     if (status !== "for_sale") c += 1;
     return c;
-  }, [countryFilter, priceMin, priceMax, beds, baths, homeTypes, onlyVerified, freeholdOnly, status]);
+  }, [countryFilter, beds, baths, homeTypes, onlyVerified, freeholdOnly, status]);
 
   const clearFilters = () => {
     setCountryFilter("");
@@ -466,8 +441,6 @@ export default function LandfelloBuyPage() {
       return prev;
     });
     setStatus("for_sale");
-    setPriceMin("");
-    setPriceMax("");
     setBeds("any");
     setBaths("any");
     setHomeTypes({
@@ -582,55 +555,6 @@ export default function LandfelloBuyPage() {
                           {countryFilter === country ? <Check className="h-4 w-4 text-emerald-900" /> : null}
                         </button>
                       ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Price */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button type="button" variant="outline" className="rounded-lg border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 h-8 px-3 text-xs">
-                      Price
-                      <ChevronDown className="h-3 w-3 ml-1.5" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-[280px] rounded-2xl">
-                    <div className="text-sm font-semibold text-emerald-950">Price range</div>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <div>
-                        <div className="text-xs text-emerald-950/60 mb-1">Min</div>
-                        <Input
-                          value={priceMin}
-                          onChange={(e) => setPriceMin(e.target.value)}
-                          placeholder="$0"
-                          className="h-10 rounded-xl"
-                        />
-                      </div>
-                      <div>
-                        <div className="text-xs text-emerald-950/60 mb-1">Max</div>
-                        <Input
-                          value={priceMax}
-                          onChange={(e) => setPriceMax(e.target.value)}
-                          placeholder="$100,000"
-                          className="h-10 rounded-xl"
-                        />
-                      </div>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="rounded-xl"
-                        onClick={() => {
-                          setPriceMin("");
-                          setPriceMax("");
-                        }}
-                      >
-                        Reset
-                      </Button>
-                      <Button type="button" className="rounded-xl bg-emerald-900 text-white hover:bg-emerald-900/90">
-                        Apply
-                      </Button>
                     </div>
                   </PopoverContent>
                 </Popover>
