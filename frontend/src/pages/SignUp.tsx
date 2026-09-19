@@ -179,7 +179,7 @@ export default function SignUp() {
       }
 
       await signup(formData.email, formData.password, accountType, profileData);
-      navigate("/buy-land");
+      navigate(accountType === "agent" ? "/sell" : "/buy");
     } catch (err: any) {
       setError(err.message || "Failed to create account. Please try again.");
     } finally {
@@ -192,7 +192,7 @@ export default function SignUp() {
       setLoading(true);
       setError("");
       await signInWithGoogle();
-      navigate("/buy-land");
+      navigate("/buy");
     } catch (err: any) {
       setError(err.message || "Failed to sign in with Google. Please try again.");
     } finally {

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import residentialImage from "@/assets/images/image.jpeg";
 import { BrandLogo } from "@/components/BrandLogo";
+import { homePathForRole } from "@/lib/roles";
 
 // Landfello — UI Preview (single-file)
 
@@ -335,9 +336,9 @@ function SignInModal({ isOpen, onClose, navigate }: { isOpen: boolean; onClose: 
     setError("");
     try {
       setLoading(true);
-      await login(email, password);
+      const profile = await login(email, password);
       onClose();
-      navigate("/buy-land");
+      navigate(homePathForRole(profile.accountType));
     } catch (err: any) {
       setError(err.message || "Failed to sign in. Please check your credentials.");
     } finally {
@@ -351,7 +352,8 @@ function SignInModal({ isOpen, onClose, navigate }: { isOpen: boolean; onClose: 
       setError("");
       await signInWithGoogle();
       onClose();
-      navigate("/buy-land");
+      const { getStoredUser } = await import("@/lib/session");
+      navigate(homePathForRole(getStoredUser()?.profile?.accountType));
     } catch (err: any) {
       setError(err.message || "Failed to sign in with Google. Please try again.");
     } finally {
@@ -513,18 +515,18 @@ function SignInModal({ isOpen, onClose, navigate }: { isOpen: boolean; onClose: 
 export default function LandfelloUIPreview() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState<string>("All");
   const [kind, setKind] = useState<string>("All");
   const [isSignInOpen, setIsSignInOpen] = useState(false);
 
-  // Logged-in users skip the marketing home page
+  // Logged-in users skip marketing home — land on their role home
   useEffect(() => {
     if (currentUser) {
-      navigate("/buy-land", { replace: true });
+      navigate(homePathForRole(userProfile?.accountType), { replace: true });
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, userProfile, navigate]);
 
   // Check if we should open the sign-in modal when navigating from sign-up page
   useEffect(() => {
@@ -566,16 +568,16 @@ export default function LandfelloUIPreview() {
           {/* Navigation - positioned closer to logo */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-emerald-900/80 ml-8">
             <button 
-              onClick={() => navigate('/buy-land')} 
+              onClick={() => navigate('/buy')} 
               className="relative hover:text-emerald-700 transition-colors after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-emerald-700 after:transition-all hover:after:w-full"
             >
               Buy Property
             </button>
             <button 
-              onClick={() => navigate('/sell')} 
+              onClick={() => navigate('/create-account')} 
               className="relative hover:text-emerald-700 transition-colors after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-emerald-700 after:transition-all hover:after:w-full"
             >
-              Sell
+              Sell as agent
             </button>
             <button 
               onClick={() => navigate('/partner-program')} 

@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,7 +19,6 @@ import {
   ChevronDown,
   Heart,
   MapPin,
-  Plus,
   Search,
   ShieldCheck,
   SlidersHorizontal,
@@ -30,6 +28,7 @@ import {
 import { TopNav } from "@/components/Profile/TopNav";
 import { getAllProperties, Property } from "@/services/propertyService";
 import { PropertyDetailsDialog } from "@/components/PropertyDetailsDialog";
+import { useRoleGate } from "@/hooks/useRoleGate";
 
 // Landfello BUY page (Zillow-inspired)
 // Map removed per request — focus on a beautiful, card-first property feed.
@@ -312,8 +311,8 @@ function ListingTile({
 }
 
 export default function LandfelloBuyPage() {
+  useRoleGate("buy");
   const navigate = useNavigate();
-  const { currentUser, userProfile } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Search
@@ -750,18 +749,6 @@ export default function LandfelloBuyPage() {
                   <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5" />
                   Filters
                 </Button>
-
-                {/* Add Property Button - Only for agents */}
-                {currentUser && userProfile?.accountType === "agent" && (
-                  <Button 
-                    type="button" 
-                    onClick={() => navigate("/add-property")}
-                    className="ml-auto rounded-lg bg-emerald-900 text-white hover:bg-emerald-900/90 h-8 px-3 text-xs whitespace-nowrap"
-                  >
-                    <Plus className="h-3 w-3 mr-1.5" />
-                    Add Property
-                  </Button>
-                )}
               </div>
             </div>
           </div>

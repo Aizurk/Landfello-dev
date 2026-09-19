@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Heart,
@@ -12,12 +13,15 @@ import {
   Sparkles,
   Home,
   X,
+  Loader2,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Property } from "@/services/propertyService";
+import { initializePayment } from "@/services/paymentService";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ScrollArea component - using div with overflow for now
 const ScrollArea = ({ children, className }: { children: React.ReactNode; className?: string }) => (
@@ -47,15 +51,46 @@ export function PropertyDetailsDialog({
   onSave,
   saved = false,
 }: PropertyDetailsDialogProps) {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [buying, setBuying] = useState(false);
+  const [buyError, setBuyError] = useState("");
 
   useEffect(() => {
     if (open && property) {
       setActiveImageIndex(0);
+      setBuyError("");
     }
   }, [open, property]);
 
   if (!property) return null;
+
+  const canBuy =
+    property.listingType === "sale" &&
+    property.status !== "sold" &&
+    !!property.price &&
+    property.price > 0;
+
+  const handleBuyLand = async () => {
+    if (!property.propertyID) return;
+    if (!currentUser) {
+      onOpenChange(false);
+      navigate("/create-account");
+      return;
+    }
+    setBuying(true);
+    setBuyError("");
+    try {
+      const payment = await initializePayment(property.propertyID);
+      onOpenChange(false);
+      window.location.href = payment.authorizationUrl;
+    } catch (err: any) {
+      setBuyError(err.message || "Could not start checkout");
+    } finally {
+      setBuying(false);
+    }
+  };
 
   const images = property.images && property.images.length > 0 
     ? property.images 
@@ -253,17 +288,34 @@ export function PropertyDetailsDialog({
           <div className="lg:col-span-4 border-l border-emerald-100 bg-emerald-50 overflow-y-auto max-h-[calc(85vh-60px)]">
             <ScrollArea className="h-full">
               <div className="space-y-4 p-4">
-                {/* Contact Card */}
+                {/* Buy / Contact Card */}
                 <Card className="rounded-2xl">
                   <CardContent className="space-y-3 p-4">
-                    <Button className="w-full bg-emerald-700 hover:bg-emerald-800">
-                      Request a tour
-                    </Button>
+                    {property.status === "sold" ? (
+                      <Button className="w-full" disabled>
+                        Sold
+                      </Button>
+                    ) : canBuy ? (
+                      <Button
+                        className="w-full bg-emerald-700 hover:bg-emerald-800"
+                        onClick={handleBuyLand}
+                        disabled={buying}
+                      >
+                        {buying ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Starting checkout…
+                          </>
+                        ) : (
+                          `Buy land · ${formatUSD(property.price || 0)}`
+                        )}
+                      </Button>
+                    ) : null}
+                    {buyError ? <div className="text-xs text-red-600">{buyError}</div> : null}
                     <Button variant="outline" className="w-full border-emerald-200">
                       Contact agent
                     </Button>
                     <div className="text-xs text-emerald-700">
-                      Landfello connects buyers with verified agents and documentation.
+                      Secure checkout via Paystack test mode. Landfello marketplace for African land.
                     </div>
                   </CardContent>
                 </Card>

@@ -1,85 +1,90 @@
 # Landfello
 
-A Node.js and TypeScript website with a React frontend.
+Marketplace for buying and selling land in Africa.
 
-- **Auth:** Firebase Authentication (and Firestore for user profiles)
-- **Database:** Supabase Postgres (property listings)
+- **Buyers** browse verified land listings and purchase via Paystack (test/mock supported)
+- **Agents** register, upload land photos + details, and list parcels for sale
+- **Frontend:** React + Vite
+- **Backend:** Python FastAPI + SQLite
 
-## Getting Started
+## Quick start
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
-- A Firebase project (auth)
-- A Supabase project (database)
+- Python 3.11+
+- Node.js 18+
 
-### 1. Create the Supabase table
-
-In the Supabase dashboard → **SQL Editor**, run:
-
-[`supabase/schema.sql`](supabase/schema.sql)
-
-### 2. Environment variables
-
-Copy the example env file and fill in your keys:
-
-```bash
-cp .env.example .env
-```
-
-Required backend values:
-
-| Variable | Where to find it |
-|----------|------------------|
-| `SUPABASE_URL` | Supabase → Project Settings → API → Project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → `service_role` (secret) |
-| Firebase Admin credentials | Service account JSON for token verification |
-
-For the frontend Firebase client config, copy `frontend/.env.example` to `frontend/.env.local`.
-
-> Never put the Supabase `service_role` key in the frontend. The Express API uses it so Firebase login still protects writes.
-
-### 3. Install & run
+### Install
 
 ```bash
 npm run install:all
+```
+
+### Run
+
+```bash
 npm run dev
 ```
 
-This starts:
+- API: http://localhost:8000
+- App: http://localhost:5173
+- API docs: http://localhost:8000/docs
 
-- Backend API on `http://localhost:3000`
-- Frontend on `http://localhost:5173`
+### Demo accounts (seeded)
 
-## How property storage works
+| Role   | Email                 | Password     |
+|--------|-----------------------|--------------|
+| Agent  | agent@landfello.example  | password123  |
+| Buyer  | buyer@landfello.example  | password123  |
 
-1. User signs in with **Firebase**
-2. Frontend sends property JSON + Firebase Bearer token to `/api/properties`
-3. Express verifies the token (Firebase Admin)
-4. Property is written to Supabase table `public.properties`
+### Paystack
 
-Images are still stored as base64 strings in the `images` text array (same as the old Cosmos setup). You can later move those to Supabase Storage if you want.
+By default the API uses a **mock Paystack checkout** so purchases work locally without keys.
 
-## Project Structure
+To use real Paystack **test** keys, edit `backend/.env`:
 
 ```
-├── src/
-│   ├── index.ts                 # Express API
-│   ├── middleware/auth.ts       # Firebase token verification
-│   └── services/supabaseDb.ts   # Supabase property CRUD
-├── supabase/
-│   └── schema.sql               # Properties table + indexes
-├── frontend/
-│   └── src/                     # React app
-├── .env.example
-└── package.json
+PAYSTACK_SECRET_KEY=sk_test_...
+PAYSTACK_PUBLIC_KEY=pk_test_...
 ```
 
-## Available Scripts
+### Tests
 
-- `npm run dev` — backend + frontend
-- `npm run dev:backend` — API only
-- `npm run dev:frontend` — Vite only
-- `npm run build` — production build
-- `npm start` — production server
-- `npm run install:all` — install all deps
+```bash
+npm run test:backend
+```
+
+## Deploy backend to Render (Docker)
+
+The API ships with a production Dockerfile at `backend/Dockerfile` and a Render blueprint at `render.yaml`.
+
+### Option A — Render Blueprint
+
+1. Push this repo to GitHub
+2. In Render → **New** → **Blueprint** → select the repo
+3. Set `FRONTEND_URL` and `CORS_ORIGINS` to your frontend URL
+4. Deploy — health check is `/health`
+
+### Option B — Manual Docker web service
+
+1. Render → **New** → **Web Service** → connect this repo
+2. Runtime: **Docker**
+3. Dockerfile path: `backend/Dockerfile`
+4. Docker build context: `backend`
+5. Add env vars from `backend/.env.example` (at least `SECRET_KEY`, `FRONTEND_URL`, `CORS_ORIGINS`)
+
+### Local Docker smoke test
+
+```bash
+docker build -t landfello-api ./backend
+docker run --rm -p 8000:8000 -e SECRET_KEY=dev -e FRONTEND_URL=http://localhost:5173 landfello-api
+```
+
+Then open http://localhost:8000/health
+
+> Note: SQLite on Render’s free plan is ephemeral unless you attach a persistent disk at `/data`.
+
+## Core flows
+
+1. **Agent:** Sign up as agent → Add Property → upload images + land details → listing appears on Buy page
+2. **Buyer:** Sign up as investor → Browse `/buy` → Open listing → Buy land → Paystack test checkout → land marked sold

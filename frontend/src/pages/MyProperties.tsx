@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Edit, Trash2, Plus } from "lucide-react";
+import { useRoleGate } from "@/hooks/useRoleGate";
 
 function formatUSD(n: number) {
   return n.toLocaleString(undefined, {
@@ -17,6 +18,7 @@ function formatUSD(n: number) {
 }
 
 export default function MyProperties() {
+  useRoleGate("sell");
   const navigate = useNavigate();
   const { currentUser, userProfile } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);

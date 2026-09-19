@@ -16,6 +16,7 @@ import {
   getActiveDraft,
   seedDummyDataIfEmpty,
 } from "@/features/ownerListing/store";
+import { useRoleGate } from "@/hooks/useRoleGate";
 
 const TRUST_POINTS = [
   "Identity verification",
@@ -35,6 +36,7 @@ const YOU_MAY_NEED = [
 ];
 
 export default function OwnerListingEntry() {
+  useRoleGate("sell");
   const navigate = useNavigate();
 
   useEffect(() => {

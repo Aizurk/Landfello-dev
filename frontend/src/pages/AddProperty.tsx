@@ -57,15 +57,16 @@ export default function AddProperty() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Redirect non-authenticated users (but allow both agents and investors)
+  // Only agents can list land on the marketplace
   useEffect(() => {
     if (!authLoading) {
       if (!currentUser) {
-        navigate("/");
+        navigate("/create-account");
         return;
       }
-      // Allow both agents and investors to add properties
-      // No redirect needed - both account types can list properties
+      if (userProfile?.accountType !== "agent") {
+        navigate("/buy");
+      }
     }
   }, [currentUser, userProfile, authLoading, navigate]);
   const [formData, setFormData] = useState({
@@ -703,7 +704,7 @@ export default function AddProperty() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/buy-land")}
+              onClick={() => navigate("/my-properties")}
               disabled={loading}
               className="rounded-2xl border-emerald-900/15 text-emerald-950 bg-white disabled:opacity-50"
             >

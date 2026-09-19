@@ -7,11 +7,9 @@ import HowItWorks from './pages/HowItWorks';
 import SavingsProgram from './pages/SavingsProgram';
 import About from './pages/About';
 import BuyLand from './pages/BuyLand';
-import Rent from './pages/Rent';
 import AddProperty from './pages/AddProperty';
 import MyProperties from './pages/MyProperties';
 import EditProperty from './pages/EditProperty';
-import FindAgent from './pages/FindAgent';
 import Settings from './pages/Settings';
 import Sell from './pages/Sell';
 import OwnerListingEntry from './pages/ownerListing/OwnerListingEntry';
@@ -24,6 +22,8 @@ import OfferReceived from './pages/ownerListing/OfferReceived';
 import ClosingWorkspace from './pages/ownerListing/ClosingWorkspace';
 import EscrowFlow from './pages/ownerListing/EscrowFlow';
 import SaleCompleted from './pages/ownerListing/SaleCompleted';
+import CheckoutMock from './pages/CheckoutMock';
+import CheckoutSuccess from './pages/CheckoutSuccess';
 import { Component, ErrorInfo, ReactNode } from 'react';
 
 class ErrorBoundary extends Component<
@@ -73,11 +73,11 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/buy" element={<BuyLand />} />
             <Route path="/buy-land" element={<BuyLand />} />
-            <Route path="/rent" element={<Rent />} />
+            <Route path="/checkout/mock" element={<CheckoutMock />} />
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
             <Route path="/add-property" element={<AddProperty />} />
             <Route path="/my-properties" element={<MyProperties />} />
             <Route path="/edit-property/:propertyId" element={<EditProperty />} />
-            <Route path="/find-agent" element={<FindAgent />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/sell" element={<Sell />} />
             <Route path="/sell/owner" element={<OwnerListingEntry />} />

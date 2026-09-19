@@ -20,6 +20,7 @@ import {
   X,
   ArrowLeft,
 } from "lucide-react";
+import { useRoleGate } from "@/hooks/useRoleGate";
 
 function Field({
   label,
@@ -50,6 +51,7 @@ function Field({
 }
 
 export default function EditProperty() {
+  useRoleGate("sell");
   const navigate = useNavigate();
   const { propertyId } = useParams<{ propertyId: string }>();
   const { currentUser, userProfile } = useAuth();

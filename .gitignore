@@ -35,6 +35,17 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+backend/*.db
+backend/.venv/
+venv/
+*.db
+test_landfello.db
+backend/.env
+
 
 
 
