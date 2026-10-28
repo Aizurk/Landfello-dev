@@ -1,7 +1,9 @@
 import os
 import sys
 
-# Must set env before importing app modules (engine binds at import time)
+# Must set env before importing app modules (engine binds at import time).
+# SQLite is allowed only for tests via ALLOW_SQLITE.
+os.environ["ALLOW_SQLITE"] = "1"
 os.environ["DATABASE_URL"] = "sqlite:///./test_landfello.db"
 os.environ["SECRET_KEY"] = "test-secret"
 os.environ["PAYSTACK_SECRET_KEY"] = ""
@@ -83,12 +85,12 @@ def test_agent_can_create_listing(client):
     assert body["status"] == "available"
 
 
-def test_buyer_cannot_create_listing(client):
+def test_buyer_can_create_listing(client):
     headers = auth_headers(client, SEED_BUYER_EMAIL)
     payload = {
         "listingType": "sale",
-        "title": "Should Fail",
-        "description": "x",
+        "title": "Investor Plot",
+        "description": "Listed by an investor",
         "country": "Ghana",
         "city": "Accra",
         "propertyType": "Residential",
@@ -101,7 +103,14 @@ def test_buyer_cannot_create_listing(client):
         "contactEmail": SEED_BUYER_EMAIL,
     }
     resp = client.post("/api/properties", json=payload, headers=headers)
-    assert resp.status_code == 403
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["price"] == 1000
+
+
+def test_upload_route_exists_and_requires_auth(client):
+    missing_auth = client.post("/api/uploads")
+    assert missing_auth.status_code != 404, missing_auth.text
+    assert missing_auth.status_code in (401, 403, 422)
 
 
 def test_property_detail_is_public(client):
@@ -127,6 +136,18 @@ def test_signup_agent_and_investor(client):
     assert agent.status_code == 200
     assert agent.json()["user"]["profile"]["accountType"] == "agent"
 
+    agent_no_license = client.post(
+        "/api/auth/signup",
+        json={
+            "email": "agentnolics@test.com",
+            "password": "password123",
+            "accountType": "agent",
+            "firstName": "NoLics",
+        },
+    )
+    assert agent_no_license.status_code == 200
+    assert agent_no_license.json()["user"]["profile"]["accountType"] == "agent"
+
     buyer = client.post(
         "/api/auth/signup",
         json={
@@ -138,3 +159,8 @@ def test_signup_agent_and_investor(client):
     )
     assert buyer.status_code == 200
     assert buyer.json()["user"]["profile"]["accountType"] == "investor"
+
+
+def test_upload_route_exists(client):
+    resp = client.post("/api/uploads")
+    assert resp.status_code != 404

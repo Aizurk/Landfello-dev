@@ -13,13 +13,29 @@ from sqlalchemy import (
     create_engine,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
+from sqlalchemy.pool import NullPool
 
 from .config import get_settings
 
 
 settings = get_settings()
-connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
-engine = create_engine(settings.database_url, connect_args=connect_args)
+_db_url = settings.sqlalchemy_database_url
+_is_sqlite = _db_url.startswith("sqlite")
+# Transaction pooler (port 6543) does not support prepared statements / server sessions.
+_uses_transaction_pooler = (not _is_sqlite) and ":6543" in _db_url
+if _is_sqlite:
+    connect_args: dict = {"check_same_thread": False}
+elif _uses_transaction_pooler:
+    connect_args = {"prepare_threshold": None}
+else:
+    connect_args = {}
+_engine_kwargs: dict = {
+    "connect_args": connect_args,
+    "pool_pre_ping": not _is_sqlite,
+}
+if _uses_transaction_pooler:
+    _engine_kwargs["poolclass"] = NullPool
+engine = create_engine(_db_url, **_engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -36,8 +52,9 @@ class User(Base):
 
     id = Column(String, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)
     account_type = Column(String, nullable=False, default="investor")  # investor | agent
+    account_type_chosen = Column(Boolean, nullable=False, default=False)
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     phone_number = Column(String, nullable=True)
@@ -61,7 +78,10 @@ class Property(Base):
     country = Column(String, nullable=False)
     city = Column(String, nullable=False)
     neighborhood = Column(String, nullable=True)
-    property_type = Column(String, nullable=False, default="Residential")
+    property_type = Column(String, nullable=False, default="Residential")  # user purpose
+    category = Column(String, nullable=False, default="Land")  # Land | House
+    bedrooms = Column(Integer, nullable=True)
+    bathrooms = Column(Integer, nullable=True)
     area_acres = Column(Float, nullable=False, default=0)
     tenure = Column(String, nullable=True, default="Freehold")
     lease_term = Column(String, nullable=True)
@@ -110,5 +130,30 @@ def get_db():
         db.close()
 
 
+def _ensure_sqlite_columns() -> None:
+    """Add new columns on existing SQLite databases (create_all does not alter)."""
+    if not settings.database_url.startswith("sqlite"):
+        return
+    with engine.begin() as conn:
+        rows = conn.exec_driver_sql("PRAGMA table_info(properties)").fetchall()
+        existing = {row[1] for row in rows}
+        alterations = [
+            ("category", "ALTER TABLE properties ADD COLUMN category VARCHAR DEFAULT 'Land'"),
+            ("bedrooms", "ALTER TABLE properties ADD COLUMN bedrooms INTEGER"),
+            ("bathrooms", "ALTER TABLE properties ADD COLUMN bathrooms INTEGER"),
+        ]
+        for name, sql in alterations:
+            if name not in existing:
+                conn.exec_driver_sql(sql)
+
+        user_rows = conn.exec_driver_sql("PRAGMA table_info(users)").fetchall()
+        user_cols = {row[1] for row in user_rows}
+        if user_rows and "account_type_chosen" not in user_cols:
+            conn.exec_driver_sql(
+                "ALTER TABLE users ADD COLUMN account_type_chosen BOOLEAN NOT NULL DEFAULT 1"
+            )
+
+
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    _ensure_sqlite_columns()

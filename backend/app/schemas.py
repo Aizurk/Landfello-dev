@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr, Field
 AccountType = Literal["investor", "agent"]
 ListingType = Literal["sale", "rent"]
 PropertyType = Literal["Residential", "Commercial", "Agricultural", "Mixed Use"]
+PropertyCategory = Literal["Land", "House"]
 Tenure = Literal["Freehold", "Leasehold"]
 LeaseTerm = Literal["Short-term", "Long-term", "Flexible"]
 
@@ -29,12 +30,17 @@ class LoginRequest(BaseModel):
 
 class UserProfile(BaseModel):
     accountType: AccountType
+    accountTypeChosen: bool = False
     firstName: Optional[str] = None
     lastName: Optional[str] = None
     phoneNumber: Optional[str] = None
     licenseNumber: Optional[str] = None
     companyName: Optional[str] = None
     photoURL: Optional[str] = None
+
+
+class AccountTypeRequest(BaseModel):
+    accountType: AccountType
 
 
 class UserOut(BaseModel):
@@ -47,6 +53,7 @@ class UserOut(BaseModel):
 class AuthResponse(BaseModel):
     token: str
     user: UserOut
+    refreshToken: Optional[str] = None
 
 
 class PropertyIn(BaseModel):
@@ -57,6 +64,9 @@ class PropertyIn(BaseModel):
     city: str
     neighborhood: Optional[str] = None
     propertyType: PropertyType = "Residential"
+    category: PropertyCategory = "Land"
+    bedrooms: Optional[int] = None
+    bathrooms: Optional[int] = None
     areaAcres: float
     tenure: Optional[Tenure] = "Freehold"
     leaseTerm: Optional[LeaseTerm] = None
@@ -81,6 +91,9 @@ class PropertyOut(BaseModel):
     city: str
     neighborhood: Optional[str] = None
     propertyType: str
+    category: str = "Land"
+    bedrooms: Optional[int] = None
+    bathrooms: Optional[int] = None
     areaAcres: float
     tenure: Optional[str] = None
     leaseTerm: Optional[str] = None
@@ -98,6 +111,10 @@ class PropertyOut(BaseModel):
     status: str = "available"
     agentName: Optional[str] = None
     agentCompany: Optional[str] = None
+
+
+class PhotoUpdateRequest(BaseModel):
+    photoURL: str = Field(min_length=1)
 
 
 class PaymentInitRequest(BaseModel):
@@ -154,6 +171,9 @@ def property_to_out(prop: Any, agent: Any = None) -> PropertyOut:
         city=prop.city,
         neighborhood=prop.neighborhood,
         propertyType=prop.property_type,
+        category=getattr(prop, "category", None) or "Land",
+        bedrooms=getattr(prop, "bedrooms", None),
+        bathrooms=getattr(prop, "bathrooms", None),
         areaAcres=prop.area_acres,
         tenure=prop.tenure,
         leaseTerm=prop.lease_term,
@@ -181,6 +201,7 @@ def user_to_out(user: Any) -> UserOut:
         photoURL=user.photo_url,
         profile=UserProfile(
             accountType=user.account_type,
+            accountTypeChosen=bool(getattr(user, "account_type_chosen", False)),
             firstName=user.first_name,
             lastName=user.last_name,
             phoneNumber=user.phone_number,
